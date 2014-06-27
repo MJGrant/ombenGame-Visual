@@ -20,7 +20,14 @@ textarea {
 
 html {
     font-size: 1em;
-    line-height: 1.4;
+    line-height: 1.0;
+}
+
+body {
+    background-image:url('../img/jakarta.jpg');
+    background-size:100%;
+    background-repeat: no-repeat;
+    color:white;
 }
 
 /*
@@ -100,11 +107,35 @@ textarea {
 
 h1 {
     margin:0px auto;
+    line-height:1.8em;
 }
 
 #setupForm {
-    max-width:25%;
+    width:220px;
+    height:200px;
     margin:0px auto;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius:6px;
+    color:white;
+}
+
+#frontButton {
+     background-color: white;
+     color:black;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius:6px;
+    font-size: 1em;
+    text-decoration: none;
+    cursor: pointer;
+    border:none;
+    height:40px;
+    margin:4px;
+}
+#form {
+    margin:0 auto;
+    padding:20px;
 }
 
 #tagline {
@@ -113,11 +144,15 @@ h1 {
     font-style:italic;
 }
 
+a {
+    color:white;
+}
+
 #playMat {
     max-width:80%;
-    height:500px;
-    margin:20px auto;
-    padding:16px;
+    height:380px;
+    margin:10px auto;
+    color:white;
 }
 
 #player1 {
@@ -136,9 +171,23 @@ h1 {
 
 #gameplayLog {
     display:block;
-    font-size:12px;
     max-width:90%;
     margin:0px auto;
+    font-size:.8em;
+    line-height:1.2em;
+}
+
+#currentTurnAndRound {
+    text-align:center;
+    font-size:1.4em;
+    line-height:1.4em;
+}
+
+#instructions {
+    line-height:1.2em;
+    text-align:center;
+    width:70%;
+    margin:0 auto;
 }
 
 #logSection{
@@ -148,13 +197,63 @@ h1 {
 
 #deckButtonDiv {
     display:block;
-    clear:both;
+    text-align:center;
     padding:30px;
     margin:0px auto;
 }
 
 #deckButton {
-    margin:0px auto;
+    background-color: green;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius:6px;
+    color: #fff;
+    font-size: 18px;
+    text-decoration: none;
+    cursor: pointer;
+    border:none;
+    height:40px;
+}
+
+#deckButton:hover{
+    background-color:lime;
+}
+
+.p1card, .p2card {
+    background-color: white;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius:6px;
+    color: black;
+    font-size: 18px;
+    text-decoration: none;
+    cursor: pointer;
+    border:none;
+    height:60px;
+    width:50px;
+    margin:4px;
+}
+
+#player1, #player2 {
+    -moz-border-radius: 25px;
+    -webkit-border-radius: 25px;
+    border-radius:12px;
+}
+
+#playerName, #opponentHandTitle {
+    color:white;
+    font-size:1.5em;
+    font-weight:bold;
+    margin:0px;
+}
+
+.p1card:hover {
+    background-color:lime;
+}
+
+.p2card {
+    background-color:gray;
+    font-size: 26px;
 }
 
 ul {

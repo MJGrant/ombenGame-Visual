@@ -99,7 +99,7 @@ Game.prototype = {
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
 		} else { //draw from deck
 			this.currentPlayer.sayDrink(this.currentPlayer,this.otherPlayer,randomCard);
-			this.currentPlayer.drink(randomCard.rank);
+			this.currentPlayer.drinkManual(randomCard.rank);
 		}
 	},
 
@@ -133,7 +133,7 @@ Game.prototype = {
 		$("#instructions").html(this.otherPlayer.name + " is choosing a card...");
 		//set current player to green 
 		$("#player2").css("background-color","green").css("border","5px solid #00FF7F");
-		$("#player1").css("background-color","#BBB").css("border","none");
+		$("#player1").css("background-color","#BBB").css("border","5px solid grey");
 		this.UI.updatePlaymat(this.deck,this.player1,this.player2);
 
 
@@ -145,7 +145,7 @@ Game.prototype = {
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
 		} else { //no cards found, draw from deck
 			this.currentPlayer.sayDrink(this.currentPlayer,this.otherPlayer,chosenCard);
-			this.currentPlayer.drink(chosenCard.rank);
+			this.currentPlayer.drinkAuto(chosenCard.rank);
 		}
 
 		this.swapPlayers();
@@ -154,9 +154,9 @@ Game.prototype = {
 	playerTurnHuman: function() {
 		$("#currentTurnAndRound").html("<b>ROUND " + this.round + "</b></br>Current Player: " + this.currentPlayer.name);
 		gameMessage(this.currentPlayer.name + "'s turn.");
-		$("#instructions").append("Choose a card to ask your opponent for:");
+		$("#instructions").append("Choose a card from your hand. Your opponent will give you any (and all) cards he/she has that match the chosen card's rank. If your opponent does not have any cards that match the rank, you'll draw from the deck until you get one that does.");
 		$("#player1").css("background-color","green").css("border","5px solid #00FF7F");
-		$("#player2").css("background-color","#BBB").css("border","none");
+		$("#player2").css("background-color","#BBB").css("border","5px solid grey");
 	},
 
 	playerChooseThisCard: function(chosenCardID) {
@@ -170,11 +170,10 @@ Game.prototype = {
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
 		} else { //draw from deck
 			this.currentPlayer.sayDrink(this.currentPlayer,this.otherPlayer,chosenCard);
-			this.currentPlayer.drink(chosenCard.rank);
+			this.UI.enableDeckButton();
+			//wait for player to click the draw button
 		}
-
-
-		this.swapPlayers();
+		//this.swapPlayers();
 	},
 
 	autoPlayLoop: function() {
@@ -239,6 +238,24 @@ Deck.prototype = {
 		}
 		return deckStr;
 	},
+
+	drawFromDeck: function() {
+		if (this.cards.length > 0) {
+			gameMessage(this.name + " drinks...");
+			//draw a card from the deck and move it to player hand
+			var drewCard = this.deck.cards[0];
+			alert("You drew this card from the deck: " + drewCard); 
+			this.handCards.push(this.deck.cards.shift());
+			//check if the card finishes a set of 4
+			if (drewCard.rank == cardRankNeeded) { ///if it matches the rank you're looking for, stop drawing
+				alert("Found a " + cardRankneeded + "!");
+			}
+			this.findSetOfFour(drewCard);
+		} else {
+			alert("Deck is empty! Game over!");
+		}
+	},
+
 }
 
 // ==================================================
@@ -256,19 +273,19 @@ UI.prototype = {
 			var cardName = Card.list[i].displayCard();
 			$("#p1Cards").append("<button class='p1card' id='card" + i +"' value='" + i + "'>"+cardName+"</button>");
 				$("#p1Cards").on("click","#card"+i,function() { 
-					game.playerChooseThisCard($(this).attr("value"));
+					game.playerChooseThisCard($(this).attr("value")); //todo: probably doesnt work
 				});
-			$("#p2Cards").append("<button class='p2card' id='opponentCard"+i+"'>[???]</button>");
-				$(".p2card").on("click", "#opponentCard"+i,function() { 
-					alert("Opponent cards are secret!");
-				});
+			$("#p2Cards").append("<button class='p2card' id='opponentCard"+i+"'>?</button>");
+			$("#deckButtonDiv").on("click","#deckButton",function() {game.deck.drawFromDeck();});
+			//$("#deckButtonDiv").on("click","#deckButton",function() {alert("alert");});
 		}
 	},
 
 	showPlaymat: function () {
 		$("#setupForm").hide();
-    	$("#playMat").fadeIn("slow").css("background-color","#F5F5F5");
+    	$("#playMat").fadeIn("slow");
     	$("#logSection").fadeIn("slow");
+    	this.disableDeckButton();
 	},
 
 	updatePlaymat: function(deck,player1,player2) {
@@ -290,8 +307,18 @@ UI.prototype = {
 		for (j = 0; j < player.handCards.length; j++) {
 			id = player.handCards[j].cardID;
 			$(idString + id).show();
-			console.log("showing " + player.name + "'s #card" + id);
+			//console.log("showing " + player.name + "'s #card" + id);
 		}
+	},
+
+	enableDeckButton: function() {
+		$("#deckButton").removeAttr("disabled").css("background-color", "green");
+		$("#deckButton:hover").css("background-color", "lime"); //todo: figure out why it doesnt work
+	},
+
+	disableDeckButton: function() {
+		$("#deckButton").attr("disabled","disabled").css("background-color", "gray");
+		$("#deckButton:hover").css("background-color", "gray");
 	},
 }
 
@@ -310,7 +337,7 @@ function Card (suit,rank) {
 	Card.list.push(this);
 }
 
-	Card.validSuits = ["Hearts", "Spades", "Clubs", "Diamonds"];
+	Card.validSuits = ["♥", "♠", "♣", "♦"];
 	Card.validRanks = 13;
 	
 
@@ -318,23 +345,23 @@ Card.prototype = {
 	displayCard: function() {
 		var cardStr = "";
 		cardStr += this.displayRank();
-		return cardStr + " of " + this.suit;
+		return cardStr + " " + this.suit;
 	},
 
 	displayRank: function() {
 		var rankStr = "";
 		switch (this.rank) {
 			case 1:
-				rankStr = "Ace";
+				rankStr = "A";
 				break;
 			case 11:
-				rankStr = "Jack";
+				rankStr = "J";
 				break;
 			case 12:
-				rankStr = "Queen";
+				rankStr = "Q";
 				break;
 			case 13:
-				rankStr = "King";
+				rankStr = "K";
 				break;
 			default:
 				rankStr = this.rank;
@@ -393,6 +420,7 @@ Player.prototype = {
 			}
 		replyStr += "in my hand. DRINK!";
 		gameMessage(replyStr);
+		alert(replyStr);
 	},
 
 	updateHistory: function(isGameOver, round) {
@@ -483,20 +511,7 @@ Player.prototype = {
 
 	},
 
-	clickDrink: function(cardToMatch) {
-		if (this.deck.cards.length > 0) {
-			gameMessage(this.name + " drinks...");
-
-			//draw a card from the deck and move it to player hand
-			var drewCard = this.deck.cards[0];
-			alert("You drew this card from the deck: " + drewCard); 
-			this.handCards.push(this.deck.cards.shift());
-			//check if the card finishes a set of 4
-			this.findSetOfFour(drewCard);
-		}
-	},
-
-	drink: function(rank) {
+	drinkAuto: function(rank) {
 		if (this.deck.cards.length > 0) {
 			gameMessage(this.name + " drinks...");
 
