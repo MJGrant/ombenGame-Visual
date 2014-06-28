@@ -39,7 +39,7 @@ Game.prototype = {
 		this.UI = new UI();
 		this.UI.init(this.deck,this.player1,this.player2);
 
-		this.round = 0;
+		this.round = 1;
 
 		if (debugMode) {
 			console.log(" *debug: Deck contents: " + this.deck.printCardsIn(this.deck.cards,false));
@@ -123,7 +123,7 @@ Game.prototype = {
 				this.currentPlayer = this.player2;
 				this.otherPlayer = this.player1;
 
-				this.UI.updateRoundText(this.round,this.currentPlayer.name);
+				this.UI.updateRoundText(this.round,this.currentPlayer);
 				this.UI.swapPlayerUI("player2","player1");
 				this.playerTurnAI();
 			}
@@ -157,7 +157,7 @@ Game.prototype = {
 	},
 
 	playerTurnHuman: function() {
-		this.UI.updateRoundText(this.round,this.currentPlayer.name);
+		this.UI.updateRoundText(this.round,this.currentPlayer);
 		gameMessage(this.currentPlayer.name + "'s turn. Click a card in your hand.");
 		this.UI.updateInstructions();
 		this.UI.swapPlayerUI("player1","player2");
