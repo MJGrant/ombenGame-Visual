@@ -82,9 +82,9 @@ Game.prototype = {
 				}
 			//game ended because a player reached 0 cards
 		} else if (this.player1.handCards.length === 0) {
-				gameOverStr += player1.name + " WINS!";
+				gameOverStr += this.player1.name + " WINS!";
 			} else if (this.player2.handCards.length === 0) {
-				gameOverStr += player2.name + " WINS!";
+				gameOverStr += this.player2.name + " WINS!";
 			}
 
 		gameMessage(gameOverStr + "\n" +
@@ -107,7 +107,7 @@ Game.prototype = {
 		}
 	},
 
-	swapPlayers: function() {
+	endTurnSwapPlayers: function() {
 		if (this.player1.handCards.length > 0 && this.player2.handCards.length > 0 && this.deck.cards.length > 0) {
 			if (this.currentPlayer == this.player2) { //player 2's turn just ended
 				this.round++;
@@ -141,19 +141,19 @@ Game.prototype = {
 		var chosenCard = this.currentPlayer.chooseRandomCardFromPlayerHand();
 		this.currentPlayer.sayAskForCard(chosenCard);
 		var cardsFound = this.otherPlayer.giveMatchingCards(chosenCard.rank);
-		alert(this.currentPlayer.name + "'s turn. " + this.currentPlayer.name + " asks you for cards matching " + chosenCard.displayRank());
+		alert(this.currentPlayer.name + "'s turn. " + this.currentPlayer.name + ' asks, "Do you have any ' + chosenCard.displayRank() + "'s ?");
 
 		if (cardsFound.length > 0) { 
 			//take all matches from opponent
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
-			alert("You give " + this.currentPlayer.name + " your matching " + cardsFound.length + " cards of rank " + chosenCard.rank);
+			alert("You give " + this.currentPlayer.name + " " + cardsFound.length + " card(s) of rank " + chosenCard.rank + " from your hand.");
 			this.UI.updatePlaymat();
 		} else { 
 			//no matching cards found, draw from deck
 			this.otherPlayer.opponentSaysDrink(chosenCard);
 			this.currentPlayer.drinkAuto(chosenCard.rank);
 		}
-		this.swapPlayers();
+		this.endTurnSwapPlayers();
 	},
 
 	playerTurnHuman: function() {
@@ -162,7 +162,7 @@ Game.prototype = {
 		this.UI.updateInstructions();
 		this.UI.swapPlayerUI("player1","player2");
 
-		alert("Click on a card in your hand to select it.");
+		alert("YOUR TURN! Click on a card in your hand to select it.");
 	},
 
 	playerChooseThisCardFromHand: function(chosenCardID) {
@@ -175,6 +175,7 @@ Game.prototype = {
 			//take from opponent
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
 			alert(this.otherPlayer.name + " has " + cardsFound.length + " cards of rank " + chosenCard.rank + "! You take " + cardsFound.length + " cards from " + this.otherPlayer.name + "'s hand.");
+			this.endTurnSwapPlayers(); // turn ends, swap players
 		} else { //draw from deck
 			this.otherPlayer.opponentSaysDrink(chosenCard);
 			this.cardRankNeeded = chosenCard.rank;
@@ -283,7 +284,8 @@ UI.prototype = {
 
 	updatePlaymat: function() {
 		gameMessage("Deck length: " + this.deck.cards.length);
-		$("#deckButton").html("DRAW FROM DECK (total: " + this.deck.cards.length + ")");
+		$("#deckButton").html("?");
+		$("#deckButtonLabel").html("<b>Total: " + this.deck.cards.length +"</b>");
 		this.updateCardsOnPlaymat(this.player1,"#card");
 		this.updateCardsOnPlaymat(this.player2,"#opponentCard");
 	},
@@ -302,8 +304,8 @@ UI.prototype = {
 	},
 
 	swapPlayerUI: function(activePlayer,inactivePlayer) {
-		$("#" + activePlayer).css("background-color","green").css("border","5px solid #00FF7F");
-		$("#" + inactivePlayer).css("background-color","#BBB").css("border","5px solid grey");
+		$("#" + activePlayer +"Mat").css("background-color","green").css("border","5px solid #00FF7F");
+		$("#" + inactivePlayer + "Mat").css("background-color","#BBB").css("border","5px solid grey");
 	},
 
 	updateInstructions: function() {
@@ -316,12 +318,12 @@ UI.prototype = {
 	},
 
 	enableDeckButton: function() {
-		$("#deckButton").removeAttr("disabled").css("background-color", "green");
+		$("#deckButton").removeAttr("disabled").css("background-color", "lime");
 		$("#deckButton:hover").css("background-color", "lime"); //todo: figure out why it doesnt work
 	},
 
 	disableDeckButton: function() {
-		$("#deckButton").attr("disabled","disabled").css("background-color", "gray");
+		$("#deckButton").attr("disabled","disabled").css("background-color", "#333");
 		$("#deckButton:hover").css("background-color", "gray");
 	},
 
@@ -553,15 +555,15 @@ Player.prototype = {
 			this.handCards.push(this.deck.cards.shift());
 			game.UI.updatePlaymat();
 
-			var drewCardStr = "You drew [" + drewCard.displayCard() + "]!";
+			var drewCardStr = "You drew a [" + drewCard.displayCard() + "] and added it to your hand!";
 			if (drewCard.rank == game.cardRankNeeded) { 
 				drewCardStr += " You found a card that matches " + game.cardRankNeeded + "! STOP DRAWING";
 				alert(drewCardStr);
 				this.findSetOfFour(drewCard); //does this card finish a set of four? let's check...
 				game.UI.disableDeckButton();
-				game.swapPlayers();
+				game.endTurnSwapPlayers();
 			} else {
-				drewCardStr += " Rank mismatch! You need a " + game.cardRankNeeded + " but you drew a " + drewCard.displayRank() + ". Keep drawing!";
+				drewCardStr += " Rank mismatch! You need a " + game.cardRankNeeded + " but you drew a " + drewCard.displayRank() + ". Click deck to draw again!";
 				alert(drewCardStr);
 				this.findSetOfFour(drewCard); //does this card finish a set of four? let's check...
 			}
@@ -580,7 +582,9 @@ function startGame (form, autoPlay) {
     var player2NameVar = form.name2.value;
     game = new Game();
 	game.init(player1NameVar,player2NameVar,autoPlay);
-	$("#opponentHandTitle").html("<p>" + player2NameVar + "'s Hand</p>");
+
+	//todo: investigate why pushing the name var via jquery breaks css padding(?) or line height (?) or margin (?)
+	//$("#opponentHandTitle").html("<p>" + player2NameVar + "'s Hand</p>");
 }
 
 function gameMessage(msg) {
@@ -591,7 +595,23 @@ function gameMessage(msg) {
 $( document ).ready(function() {
 	$("#playMat").hide();
 	$("#logSection").hide();
+
+	//parallax technique from http://code.tutsplus.com/tutorials/a-simple-parallax-scrolling-technique--net-27641
+	$('section[data-type="background"]').each(function(){
+      var $bgobj = $(this); // assigning the object
+		
+		$(window).scroll(function() {
+            var yPos = -($window.scrollTop() / $bgobj.data('speed')); 
+             
+            // Put together our final background position
+            var coords = '50% '+ yPos + 'px';
+ 
+            // Move the background
+            $bgobj.css({ backgroundPosition: coords });
+        }); 
+    });    
 });
+
 
 
 //Resources used

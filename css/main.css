@@ -24,10 +24,10 @@ html {
 }
 
 body {
-    background-image:url('../img/jakarta.jpg');
+    color:white;
+    background:url(../img/jakarta.jpg) repeat fixed;
     background-size:100%;
     background-repeat: no-repeat;
-    color:white;
 }
 
 /*
@@ -150,23 +150,19 @@ a {
 
 #playMat {
     max-width:80%;
-    height:380px;
+    height:320px;
     margin:10px auto;
     color:white;
+    display: flex; justify-content: space-between; 
 }
 
-#player1 {
-    float:left;
-    width:40%;
+#player1Mat, #player2Mat {
+    -moz-border-radius: 25px;
+    -webkit-border-radius: 25px;
+    border-radius:12px;
+    width:34%;
     padding:20px;
-    height:200px;
-}
-
-#player2 {
-    float:right;
-    padding:20px;
-    width:40%;
-    height:200px;
+    height:290px;
 }
 
 #gameplayLog {
@@ -196,30 +192,15 @@ a {
 }
 
 #deckButtonDiv {
+    float:right;
     display:block;
+    width:15%;
     text-align:center;
-    padding:30px;
+    padding:10px;
     margin:0px auto;
 }
 
-#deckButton {
-    background-color: green;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    border-radius:6px;
-    color: #fff;
-    font-size: 18px;
-    text-decoration: none;
-    cursor: pointer;
-    border:none;
-    height:40px;
-}
-
-#deckButton:hover{
-    background-color:lime;
-}
-
-.p1card, .p2card {
+.p1card, .p2card, #deckButton {
     background-color: white;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
@@ -234,17 +215,20 @@ a {
     margin:4px;
 }
 
-#player1, #player2 {
-    -moz-border-radius: 25px;
-    -webkit-border-radius: 25px;
-    border-radius:12px;
+#deckButton {
+    background-color: lime;
+    color: #fff;
+    font-size: 18px;
+}
+
+#deckButton:hover{
+    background-color:lime;
 }
 
 #playerName, #opponentHandTitle {
     color:white;
-    font-size:1.5em;
-    font-weight:bold;
-    margin:0px;
+    font-size:1.3em;
+    margin:-10px 0px 0px 0px;
 }
 
 .p1card:hover {
