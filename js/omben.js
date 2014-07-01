@@ -3,7 +3,7 @@
 The Indonesian version of Go Fish is known as Omben in Javanese or Minuman in Indonesian, both names meaning "drink". It is said to be best for two players, each of whom begins with a hand of 4 or 5 cards (according to agreement) drawn from a 52 card pack. The players take turns to ask their opponent for a rank, such as 8 or king, and the opponent must give the asker all cards of that rank that he or she holds. If the opponent has no such card the asker must "drink" by drawing cards from the pile of undealt cards: the asker continues to draw until he or she finds a card of the rank that was asked for. Whenever a player has four of a kind in hand, it must be discarded face up. The winner is the first player to get rid of all their cards - it does not matter how many or few sets they have made. If the stock runs out, the player with fewer cards is the winner. Note that in this game the players ask alternately, irrespective of whether the card asked for is found in the other player's hand or the draw pile.
 */
 
-var debugMode = true;
+var debugMode = false;
 var handSize = 5;
 
 //==================================================
@@ -17,6 +17,7 @@ function Game () {
 	this.player2;
 	this.currentPlayer;
 	this.otherPlayer;
+	this.autoPlay;
 }
 
 Game.prototype = {
@@ -40,6 +41,7 @@ Game.prototype = {
 		this.UI.init(this.deck,this.player1,this.player2);
 
 		this.round = 1;
+		this.autoPlay = autoPlay;
 
 		consoleLogMessage("debug", " *debug: Deck contents: " + this.deck.printCardsIn(this.deck.cards,false));
 		consoleLogMessage("debug", " *debug: Draw pile contents: " + this.deck.printCardsIn(this.deck.cards,false));
@@ -54,7 +56,7 @@ Game.prototype = {
 
 		gameplayLogMessage("Starting game");
 
-			if (autoPlay == true) {
+			if (this.autoPlay === true) {
 				this.autoPlayLoop();
 			} else {
 				this.playerTurnHuman();
@@ -64,10 +66,10 @@ Game.prototype = {
 	},
 
 	calculateAndPrintWinner: function () {
-
+		console.log("made it to print winner");
 		var historyStr = this.player1.name + "'s hand history: " + this.player1.printHistory();
 		historyStr += this.player2.name + "'s hand history: " + this.player2.printHistory();
-		consoleLogMessage(always,historyStr);
+		consoleLogMessage("always",historyStr);
 
 		var gameOverStr = "";
 			if (this.deck.cards.length === 0) { //game ended because deck ran out
@@ -86,10 +88,12 @@ Game.prototype = {
 				gameOverStr += this.player2.name + " WINS!";
 			}
 
-		gameplayLogMessage(gameOverStr + "\n" +
+		gameOverStr += "\n" +
 			"Deck cards remaining: " + this.deck.cards.length + "\n" +
 			this.player1.name + " card total: " + this.player1.handCards.length + "\n" +
-			this.player2.name + " card total: " + this.player2.handCards.length);
+			this.player2.name + " card total: " + this.player2.handCards.length;
+		gameplayLogMessage(gameOverStr);
+		alert(gameOverStr);
 	},
 
 	playerTurnAutoPlay: function () {
@@ -97,12 +101,11 @@ Game.prototype = {
 		this.currentPlayer.sayAskForCard(randomCard);
 
 		var cardsFound = this.otherPlayer.giveMatchingCards(randomCard.rank);
-
 		if (cardsFound.length > 0) { //take from opponent
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
 		} else { //draw from deck
 			this.otherPlayer.opponentSaysDrink(randomCard);
-			this.currentPlayer.drinkManual(randomCard.rank);
+			this.currentPlayer.drinkAuto(randomCard.rank);
 		}
 	},
 
@@ -192,16 +195,18 @@ Game.prototype = {
 		while (this.player1.handCards.length > 0 && this.player2.handCards.length > 0 && this.deck.cards.length > 0) {
 			this.playerTurnAutoPlay(this.currentPlayer,this.otherPlayer);
 			if (this.currentPlayer == this.player1) {
-				swapCurrentAndOtherPlayerAssignments(this.player2,this.player1);
+				this.swapCurrentAndOtherPlayerAssignments(this.player2,this.player1);
+					this.UI.swapPlayerUI("player1","player2");
 			} else {
 				this.round++;
 				this.updatePlayerHistoryLogs(false,this.round);
 				consoleLogMessage("always","ROUND " + this.round);
+				this.UI.swapPlayerUI("player2","player1");
 				this.swapCurrentAndOtherPlayerAssignments(this.player1,this.player2);
 			}
 			gameplayLogMessage(this.currentPlayer.name + "'s turn!");
 		}
-		updatePlayerHistoryLogs(true,0);
+		this.updatePlayerHistoryLogs(true,0);
 		this.calculateAndPrintWinner(this.deck,this.player1,this.player2);
 	},
 };
@@ -238,7 +243,7 @@ Deck.prototype = {
 	printCardsIn: function(array, isPretty) {
 		var deckStr = "\n";
 		for (i = 0; i < array.length; i ++) {
-			if (isPretty == false) { //print debug
+			if (isPretty === false) { //print debug
 				deckStr += "Index " + i + " contains: " + array[i].displayCard() + "\n";
 			} else {
 				deckStr += "[" + array[i].displayCard() + "] ";
@@ -385,7 +390,6 @@ Card.prototype = {
 		}
 		return rankStr;
 	},
-
 }
 
 //==================================================
@@ -490,7 +494,7 @@ Player.prototype = {
 				this.handCards.splice(removeIndex - i,1);
 			}
 
-			var completedSetStr = "Completed a set of 4! Removed these cards: " + theseCardsStr + " from " + this.name + "'s hand."
+			var completedSetStr = "Completed a set of 4! Removed these cards: " + theseCardsStr + " from " + this.name + "'s hand.";
 			gameplayLogMessage("   " + completedSetStr);
 			gameplayAlertMessage(completedSetStr);
 
@@ -509,10 +513,10 @@ Player.prototype = {
 			matchedCardsStr += " [" + cards[i].displayCard() + "]";
 		}
 		gameplayLogMessage(otherPlayer.name + ' replies, "Yes, take my:' + matchedCardsStr + '."');
-	 	gameplayLogMessage(this.name + " acquires " + matchedCardsStr + " and checks own hand to see if a set is made...");
+		gameplayLogMessage(this.name + " acquires " + matchedCardsStr + " and checks own hand to see if a set is made...");
 
-	 	//push from cards array to player hand and check for sets of four
-	 	for (var i = 0; i < cards.length; i ++) {
+		//push from cards array to player hand and check for sets of four
+		for (var i = 0; i < cards.length; i ++) {
 			this.handCards.push(cards[i]);
 			this.findSetOfFour(cards[i]);
 		}
@@ -553,7 +557,7 @@ Player.prototype = {
 			game.UI.updatePlaymat();
 
 			var drewCardStr = "You drew a [" + drewCard.displayCard() + "] and added it to your hand!";
-			if (drewCard.rank == game.cardRankNeeded) { 
+			if (drewCard.rank == game.cardRankNeeded) {
 				drewCardStr += " You found a card that matches " + game.cardRankNeeded + "! STOP DRAWING";
 				gameplayAlertMessage(drewCardStr);
 				this.findSetOfFour(drewCard); //does this card finish a set of four? let's check...
@@ -576,11 +580,10 @@ Player.prototype = {
 function startGame (form, autoPlay) {
     var player1NameVar = form.name1.value;
     var player2NameVar = form.name2.value;
+    $("#player1NameTitle").html(player1NameVar + "'s hand (Player 1)");
+    $("#player2NameTitle").html(player2NameVar + "'s hand (Player 2)");
     game = new Game();
-	game.init(player1NameVar,player2NameVar,autoPlay);
-
-	//todo: investigate why pushing the name var via jquery breaks css padding(?) or line height (?) or margin (?)
-	//$("#opponentHandTitle").html("<p>" + player2NameVar + "'s Hand</p>");
+		game.init(player1NameVar,player2NameVar,autoPlay);
 }
 
 function gameplayLogMessage(msg) {
@@ -589,7 +592,9 @@ function gameplayLogMessage(msg) {
 }
 
 function gameplayAlertMessage(msg) {
-	alert(msg);
+	if (game.autoPlay === false) {
+			alert(msg);
+		}
 }
 
 function consoleLogMessage(showWhen, msg) {
