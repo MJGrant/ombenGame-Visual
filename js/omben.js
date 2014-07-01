@@ -315,7 +315,7 @@ UI.prototype = {
 
 	updateInstructions: function() {
 		$("#instructions").empty();
-		$("#instructions").append("Choose a card from your hand. Your opponent will give you any (and all) cards he/she has that match the chosen card's rank. If your opponent does not have any cards that match the rank, you'll draw from the deck until you get one that does.");
+		$("#instructions").append("Click a card in your hand. If your opponent doesn't have any cards of matching rank, draw from the deck until you find a match.");
 	},
 
 	updateRoundText: function(round,currentPlayer) {

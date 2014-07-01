@@ -150,7 +150,7 @@ a {
 
 #playMat {
     max-width:80%;
-    height:320px;
+    height:340px;
     margin:10px auto;
     color:white;
     display: flex; justify-content: space-between; 
@@ -162,30 +162,31 @@ a {
     border-radius:12px;
     width:34%;
     padding:20px;
-    height:290px;
+    height:80%; /* 290 */
 }
 
 #gameplayLog {
     display:block;
     max-width:90%;
-    margin:0px auto;
+    margin:0;
     font-size:.8em;
     line-height:1.2em;
     height:200px;
-    overflow-y: scroll
+    overflow-y: scroll;
 }
 
 #currentTurnAndRound {
     text-align:center;
     font-size:1.4em;
     line-height:1.4em;
+    margin-top:-50px;
 }
 
 #instructions {
     line-height:1.2em;
     text-align:center;
-    width:70%;
-    margin:0 auto;
+    width:50%;
+    margin:15px auto;
 }
 
 #logSection{
