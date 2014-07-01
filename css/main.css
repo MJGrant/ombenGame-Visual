@@ -171,6 +171,8 @@ a {
     margin:0px auto;
     font-size:.8em;
     line-height:1.2em;
+    height:200px;
+    overflow-y: scroll
 }
 
 #currentTurnAndRound {
@@ -206,7 +208,7 @@ a {
     -webkit-border-radius: 5px;
     border-radius:6px;
     color: black;
-    font-size: 18px;
+    font-size: 16px;
     text-decoration: none;
     cursor: pointer;
     border:none;
@@ -218,7 +220,6 @@ a {
 #deckButton {
     background-color: lime;
     color: #fff;
-    font-size: 18px;
 }
 
 #deckButton:hover{
