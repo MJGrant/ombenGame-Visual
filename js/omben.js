@@ -41,20 +41,18 @@ Game.prototype = {
 
 		this.round = 1;
 
-		if (debugMode) {
-			console.log(" *debug: Deck contents: " + this.deck.printCardsIn(this.deck.cards,false));
-			console.log(" *debug: Draw pile contents: " + this.deck.printCardsIn(this.deck.cards,false));
-
-			console.log("Player 1 is: " + this.player1.name + "\n"+
+		consoleLogMessage("debug", " *debug: Deck contents: " + this.deck.printCardsIn(this.deck.cards,false));
+		consoleLogMessage("debug", " *debug: Draw pile contents: " + this.deck.printCardsIn(this.deck.cards,false));
+		consoleLogMessage("debug", "Player 1 is: " + this.player1.name + "\n"+
 			this.player1.name + "'s hand contains: " + this.deck.printCardsIn(this.player1.handCards,true) +
 			"\n\nPlayer 2 is: " + this.player2.name + "\n"+
 			this.player2.name + "'s hand contains: " + this.deck.printCardsIn(this.player2.handCards,true) +
 			"\n\nPlayer 1 goes first.\nROUND 1");
-		}
 
 		this.UI.showPlaymat();
 		this.UI.updatePlaymat();
-		gameMessage("Starting game");
+
+		gameplayLogMessage("Starting game");
 
 			if (autoPlay == true) {
 				this.autoPlayLoop();
@@ -67,8 +65,9 @@ Game.prototype = {
 
 	calculateAndPrintWinner: function () {
 
-		console.log(this.player1.name + "'s hand history: " + this.player1.printHistory());
-		console.log(this.player2.name + "'s hand history: " + this.player2.printHistory());
+		var historyStr = this.player1.name + "'s hand history: " + this.player1.printHistory();
+		historyStr += this.player2.name + "'s hand history: " + this.player2.printHistory();
+		consoleLogMessage(always,historyStr);
 
 		var gameOverStr = "";
 			if (this.deck.cards.length === 0) { //game ended because deck ran out
@@ -87,7 +86,7 @@ Game.prototype = {
 				gameOverStr += this.player2.name + " WINS!";
 			}
 
-		gameMessage(gameOverStr + "\n" +
+		gameplayLogMessage(gameOverStr + "\n" +
 			"Deck cards remaining: " + this.deck.cards.length + "\n" +
 			this.player1.name + " card total: " + this.player1.handCards.length + "\n" +
 			this.player2.name + " card total: " + this.player2.handCards.length);
@@ -107,46 +106,46 @@ Game.prototype = {
 		}
 	},
 
+	swapCurrentAndOtherPlayerAssignments: function(newCurrentPlayer,newOtherPlayer) {
+		this.currentPlayer = newCurrentPlayer;
+		this.otherPlayer = newOtherPlayer;
+	},
+
 	endTurnSwapPlayers: function() {
 		if (this.player1.handCards.length > 0 && this.player2.handCards.length > 0 && this.deck.cards.length > 0) {
 			if (this.currentPlayer == this.player2) { //player 2's turn just ended
 				this.round++;
-				this.currentPlayer.updateHistory(false, this.round);
-				this.otherPlayer.updateHistory(false, this.round);
+				this.updatePlayerHistoryLogs(false,this.round);
+				this.swapCurrentAndOtherPlayerAssignments(this.player1,this.player2);
 
-				this.currentPlayer = this.player1;
-				this.otherPlayer = this.player2;
-
-				gameMessage("<b>ROUND " + this.round + "</b>");
-				this.playerTurnHuman();	
+				gameplayLogMessage("<b>ROUND " + this.round + "</b>");
+				this.playerTurnHuman();
 			} else { //player 1's turn just ended
-				this.currentPlayer = this.player2;
-				this.otherPlayer = this.player1;
+				this.swapCurrentAndOtherPlayerAssignments(this.player2,this.player1);
 
 				this.UI.updateRoundText(this.round,this.currentPlayer);
 				this.UI.swapPlayerUI("player2","player1");
 				this.playerTurnAI();
 			}
 		} else { //game is won
-			this.currentPlayer.updateHistory(true, 0);
-			this.otherPlayer.updateHistory(true, 0);
+			updatePlayerHistoryLogs(true,0);
 			this.calculateAndPrintWinner(this.deck,this.player1,this.player2);
 		}
 	},
 
 	playerTurnAI: function() {
-		gameMessage(this.currentPlayer.name + "'s turn.");
+		gameplayLogMessage(this.currentPlayer.name + "'s turn.");
 		$("#instructions").html(this.currentPlayer.name + " is choosing a card...");
 
 		var chosenCard = this.currentPlayer.chooseRandomCardFromPlayerHand();
 		this.currentPlayer.sayAskForCard(chosenCard);
 		var cardsFound = this.otherPlayer.giveMatchingCards(chosenCard.rank);
-		alert(this.currentPlayer.name + "'s turn. " + this.currentPlayer.name + ' asks, "Do you have any ' + chosenCard.displayRank() + "'s ?");
+		gameplayAlertMessage(this.currentPlayer.name + "'s turn. " + this.currentPlayer.name + ' asks, "Do you have any ' + chosenCard.displayRank() + "'s ?");
 
 		if (cardsFound.length > 0) { 
 			//take all matches from opponent
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
-			alert("You give " + this.currentPlayer.name + " " + cardsFound.length + " card(s) of rank " + chosenCard.rank + " from your hand.");
+			gameplayAlertMessage("You give " + this.currentPlayer.name + " " + cardsFound.length + " card(s) of rank " + chosenCard.rank + " from your hand.");
 			this.UI.updatePlaymat();
 		} else { 
 			//no matching cards found, draw from deck
@@ -158,23 +157,28 @@ Game.prototype = {
 
 	playerTurnHuman: function() {
 		this.UI.updateRoundText(this.round,this.currentPlayer);
-		gameMessage(this.currentPlayer.name + "'s turn. Click a card in your hand.");
+		gameplayLogMessage(this.currentPlayer.name + "'s turn. Click a card in your hand.");
 		this.UI.updateInstructions();
 		this.UI.swapPlayerUI("player1","player2");
 
-		alert("YOUR TURN! Click on a card in your hand to select it.");
+		gameplayAlertMessage("YOUR TURN! Click on a card in your hand to select it.");
+	},
+
+	updatePlayerHistoryLogs: function (endGameBool,numToLog) {
+		this.currentPlayer.updateHistory(false, this.round);
+		this.otherPlayer.updateHistory(false, this.round);
 	},
 
 	playerChooseThisCardFromHand: function(chosenCardID) {
 		chosenCard = Card.list[chosenCardID];
-		gameMessage(this.currentPlayer.name + " selected this card: " + chosenCard.displayCard());
+		gameplayLogMessage(this.currentPlayer.name + " selected this card: " + chosenCard.displayCard());
 		this.currentPlayer.sayAskForCard(chosenCard);
 
 		var cardsFound = this.otherPlayer.giveMatchingCards(chosenCard.rank);
-		if (cardsFound.length > 0) { 
+		if (cardsFound.length > 0) {
 			//take from opponent
 			this.currentPlayer.takeCards(cardsFound,this.otherPlayer);
-			alert(this.otherPlayer.name + " has " + cardsFound.length + " cards of rank " + chosenCard.rank + "! You take " + cardsFound.length + " cards from " + this.otherPlayer.name + "'s hand.");
+			gameplayAlertMessage(this.otherPlayer.name + " has " + cardsFound.length + " cards of rank " + chosenCard.rank + "! You take " + cardsFound.length + " cards from " + this.otherPlayer.name + "'s hand.");
 			this.endTurnSwapPlayers(); // turn ends, swap players
 		} else { //draw from deck
 			this.otherPlayer.opponentSaysDrink(chosenCard);
@@ -188,20 +192,16 @@ Game.prototype = {
 		while (this.player1.handCards.length > 0 && this.player2.handCards.length > 0 && this.deck.cards.length > 0) {
 			this.playerTurnAutoPlay(this.currentPlayer,this.otherPlayer);
 			if (this.currentPlayer == this.player1) {
-				this.currentPlayer = this.player2;
-				this.otherPlayer = this.player1;
+				swapCurrentAndOtherPlayerAssignments(this.player2,this.player1);
 			} else {
 				this.round++;
-				this.currentPlayer.updateHistory(false, this.round);
-				this.otherPlayer.updateHistory(false, this.round);
-				console.log("ROUND " + this.round);
-				this.currentPlayer = this.player1;
-				this.otherPlayer = this.player2;
+				this.updatePlayerHistoryLogs(false,this.round);
+				consoleLogMessage("always","ROUND " + this.round);
+				this.swapCurrentAndOtherPlayerAssignments(this.player1,this.player2);
 			}
-			gameMessage(this.currentPlayer.name + "'s turn!");
+			gameplayLogMessage(this.currentPlayer.name + "'s turn!");
 		}
-		this.currentPlayer.updateHistory(true, 0);
-		this.otherPlayer.updateHistory(true, 0);
+		updatePlayerHistoryLogs(true,0);
 		this.calculateAndPrintWinner(this.deck,this.player1,this.player2);
 	},
 };
@@ -283,7 +283,7 @@ UI.prototype = {
 	},
 
 	updatePlaymat: function() {
-		gameMessage("Deck length: " + this.deck.cards.length);
+		gameplayLogMessage("Deck length: " + this.deck.cards.length);
 		$("#deckButton").html("?");
 		$("#deckButtonLabel").html("<b>Total: " + this.deck.cards.length +"</b>");
 		this.updateCardsOnPlaymat(this.player1,"#card");
@@ -412,9 +412,7 @@ Player.prototype = {
 	},
 
 	sayMyHandContents: function() {
-		if (debugMode) {
-			console.log(" *debug: " + this.name + "'s hand now contains: " + this.deck.printCardsIn(this.handCards,false));
-		}
+		consoleLogMessage("debug"," *debug: " + this.name + "'s hand now contains: " + this.deck.printCardsIn(this.handCards,false));
 	},
 
 	sayAskForCard: function(currentCard) {
@@ -424,13 +422,13 @@ Player.prototype = {
 			} else { //it's a number, use apostrophe
 				askStr += "'s?";
 			}
-		gameMessage(askStr);
+		gameplayLogMessage(askStr);
 	},
 
 	opponentSaysDrink: function(card) {
 		var replyStr = this.name + ' replies, "Nope, no '+ card.displayRank() + "'s in my hand. DRINK!";
-		gameMessage(replyStr);
-		alert(replyStr);
+		gameplayLogMessage(replyStr);
+		gameplayAlertMessage(replyStr);
 	},
 
 	updateHistory: function(isGameOver, round) {
@@ -460,7 +458,7 @@ Player.prototype = {
 		var matchingOpponentCards = [];
 		for (i = 0; i < this.handCards.length; i ++) {
 			if (rank == this.handCards[i].rank) {
-				if (debugMode) { console.log(" *debug: this.handCards[i]" + this.handCards[i].displayCard()); }
+				consoleLogMessage("debug"," *debug: this.handCards[i]" + this.handCards[i].displayCard());
 				matchingOpponentCards.push(this.handCards.splice(i,1)[0]);
 			}
 		}
@@ -468,18 +466,18 @@ Player.prototype = {
 	},
 
 	findSetOfFour: function (card) {
-		//gameMessage("  Checking for a set of four " + card.displayRank(card.rank) + "s in " + this.name + "'s hand containing " + this.handCards.length + " cards...");
+		//gameplayLogMessage("  Checking for a set of four " + card.displayRank(card.rank) + "s in " + this.name + "'s hand containing " + this.handCards.length + " cards...");
 		var matchIndices = [];
 
 		for (i = 0; i < this.handCards.length; i ++) {
 			if (card.rank == this.handCards[i].rank) {
 				matchIndices.push(i);
 				if (debugMode) {
-					gameMessage("    Match found! " + card.displayRank(card.rank) + " matches " + this.handCards[i].displayCard() + ". Total matches so far: " + matchIndices.length);
+					gameplayLogMessage("    Match found! " + card.displayRank(card.rank) + " matches " + this.handCards[i].displayCard() + ". Total matches so far: " + matchIndices.length);
 				}
 			} else {
 				if (debugMode) {
-					gameMessage("    Not a match. " + card.displayRank(card.rank) + " does not match " + this.handCards[i].displayCard());
+					gameplayLogMessage("    Not a match. " + card.displayRank(card.rank) + " does not match " + this.handCards[i].displayCard());
 				}
 			}
 		}
@@ -492,15 +490,15 @@ Player.prototype = {
 				this.handCards.splice(removeIndex - i,1);
 			}
 
-			//todo refactor game message to have an optional alert bool 
-			gameMessage("    Completed a set of 4! Removed these cards: " + theseCardsStr + " from " + this.name + "'s hand.");
-			alert("Completed a set of 4! Removed these cards: " + theseCardsStr + " from " + this.name + "'s hand.");
+			var completedSetStr = "Completed a set of 4! Removed these cards: " + theseCardsStr + " from " + this.name + "'s hand."
+			gameplayLogMessage("   " + completedSetStr);
+			gameplayAlertMessage(completedSetStr);
 
 			game.UI.updatePlaymat();
 			matchesFound = 0;
 			matchIndices = [];
 		} else {
-			gameMessage("  Did not find a set of four " + card.displayRank(card.rank) + "'s in " + this.name + "'s hand.");
+			gameplayLogMessage("  Did not find a set of four " + card.displayRank(card.rank) + "'s in " + this.name + "'s hand.");
 		}
 	},
 
@@ -510,8 +508,8 @@ Player.prototype = {
 		for (var i = 0; i < cards.length; i ++ ) {
 			matchedCardsStr += " [" + cards[i].displayCard() + "]";
 		}
-		gameMessage(otherPlayer.name + ' replies, "Yes, take my:' + matchedCardsStr + '."');
-	 	gameMessage(this.name + " acquires " + matchedCardsStr + " and checks own hand to see if a set is made...");
+		gameplayLogMessage(otherPlayer.name + ' replies, "Yes, take my:' + matchedCardsStr + '."');
+	 	gameplayLogMessage(this.name + " acquires " + matchedCardsStr + " and checks own hand to see if a set is made...");
 
 	 	//push from cards array to player hand and check for sets of four
 	 	for (var i = 0; i < cards.length; i ++) {
@@ -519,21 +517,20 @@ Player.prototype = {
 			this.findSetOfFour(cards[i]);
 		}
 		this.sayMyHandContents();
-
 	},
 
 	drinkAuto: function(rank) {
 		if (this.deck.cards.length > 0) {
-			gameMessage(this.name + " drinks...");
+			gameplayLogMessage(this.name + " drinks...");
 
 			for (i = 0; i < this.deck.cards.length; i ++) {
 				//draw a card from the face down deck and see if it makes a set of 4
 				var drewCard = this.deck.cards[0];
 				this.handCards.push(this.deck.cards.shift());
-				gameMessage(this.name + " drew this card from the pile: [" + drewCard.displayCard() + "]");
+				gameplayLogMessage(this.name + " drew this card from the pile: [" + drewCard.displayCard() + "]");
 
 				if (rank == drewCard.rank) {
-					gameMessage(this.name + " stops drawing cards. " + drewCard.displayCard() + "'s rank matches " + this.name + "'s " + rank + ".");
+					gameplayLogMessage(this.name + " stops drawing cards. " + drewCard.displayCard() + "'s rank matches " + this.name + "'s " + rank + ".");
 				}
 
 				this.findSetOfFour(drewCard);
@@ -543,14 +540,14 @@ Player.prototype = {
 				}
 			}
 		} else {
-			gameMessage("No cards to drink from! GAME OVER!");
+			gameplayLogMessage("No cards to drink from! GAME OVER!");
 		}
 	},
 
 	drawFromDeck: function() {
 		if (this.deck.cards.length > 0) {
 			event.stopPropagation();
-			gameMessage(this.name + " drinks...");
+			gameplayLogMessage(this.name + " drinks...");
 			drewCard = this.deck.cards[0];
 			this.handCards.push(this.deck.cards.shift());
 			game.UI.updatePlaymat();
@@ -558,16 +555,15 @@ Player.prototype = {
 			var drewCardStr = "You drew a [" + drewCard.displayCard() + "] and added it to your hand!";
 			if (drewCard.rank == game.cardRankNeeded) { 
 				drewCardStr += " You found a card that matches " + game.cardRankNeeded + "! STOP DRAWING";
-				alert(drewCardStr);
+				gameplayAlertMessage(drewCardStr);
 				this.findSetOfFour(drewCard); //does this card finish a set of four? let's check...
 				game.UI.disableDeckButton();
 				game.endTurnSwapPlayers();
 			} else {
 				drewCardStr += " Rank mismatch! You need a " + game.cardRankNeeded + " but you drew a " + drewCard.displayRank() + ". Click deck to draw again!";
-				alert(drewCardStr);
+				gameplayAlertMessage(drewCardStr);
 				this.findSetOfFour(drewCard); //does this card finish a set of four? let's check...
 			}
-			
 		}
 	},
 }
@@ -587,29 +583,28 @@ function startGame (form, autoPlay) {
 	//$("#opponentHandTitle").html("<p>" + player2NameVar + "'s Hand</p>");
 }
 
-function gameMessage(msg) {
+function gameplayLogMessage(msg) {
 	$("#gameplayLog").prepend("<li>" + msg + "</li>").fadeIn("slow");
-	console.log(msg);
+	consoleLogMessage("always",msg);
+}
+
+function gameplayAlertMessage(msg) {
+	alert(msg);
+}
+
+function consoleLogMessage(showWhen, msg) {
+	if (showWhen == "debug") {
+		if (debugMode) {
+			console.log(msg);
+		}
+	} else {
+		console.log(msg);
+	}
 }
 
 $( document ).ready(function() {
 	$("#playMat").hide();
 	$("#logSection").hide();
-
-	//parallax technique from http://code.tutsplus.com/tutorials/a-simple-parallax-scrolling-technique--net-27641
-	$('section[data-type="background"]').each(function(){
-      var $bgobj = $(this); // assigning the object
-		
-		$(window).scroll(function() {
-            var yPos = -($window.scrollTop() / $bgobj.data('speed')); 
-             
-            // Put together our final background position
-            var coords = '50% '+ yPos + 'px';
- 
-            // Move the background
-            $bgobj.css({ backgroundPosition: coords });
-        }); 
-    });    
 });
 
 
